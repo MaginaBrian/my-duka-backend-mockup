@@ -7,8 +7,9 @@ from sqlalchemy.exc import IntegrityError
 
 from app import db # Import db from your app initialization
 from app.models.user_models import Admin, Merchant # Import Admin and Merchant models
+from app.models.store import Store # Import the Store model
 from app.utils.validators import validate_email, validate_password
-from app.auth.permissions import merchant_required, admin_required # Import new admin_required
+from app.auth.permissions import merchant_required, admin_required
 
 # Create a Blueprint for admin-related routes
 admin_bp = Blueprint('admin_bp', __name__)
@@ -102,6 +103,7 @@ class AdminResource(Resource):
         email = data.get('email', target_admin.email)
         password = data.get('password')
         is_active = data.get('is_active', target_admin.is_active)
+        store_id = data.get('store_id') # Get store_id from payload
 
         if username:
             target_admin.username = username
@@ -119,6 +121,21 @@ class AdminResource(Resource):
             # Prevent admin from deactivating themselves or changing their own active status
             return {'message': 'Admins cannot change their own active status'}, 403
 
+        # --- New Logic for Store Assignment ---
+        if store_id is not None: # If store_id is provided in the payload (can be null to unassign)
+            if not is_merchant:
+                return {'message': 'Only Merchant can assign/unassign stores to admins'}, 403
+
+            if store_id == 0: # Convention to unassign store
+                target_admin.store_id = None
+            else:
+                store = Store.query.get(store_id)
+                if not store:
+                    return {'message': f'Store with ID {store_id} not found'}, 404
+                if store.merchant_id != current_user_id: # Ensure store belongs to this merchant
+                    return {'message': 'Store does not belong to your merchant account'}, 403
+                target_admin.store_id = store_id
+        # --- End New Logic ---
 
         try:
             db.session.commit()
