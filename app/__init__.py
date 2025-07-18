@@ -1,3 +1,5 @@
+# app/__init__.py
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
@@ -7,7 +9,7 @@ from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from app.config import Config
+from app.config import config # Import the config dictionary
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -18,16 +20,16 @@ migrate = Migrate()
 bcrypt = Bcrypt()
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["1000 per hour"]
+    default_limits=["1000 per hour"] # Default rate limit
 )
 
-def create_app(config_class=Config):
+def create_app(config_name='default'): # Changed default to 'default' to match config dict
     """
     Application factory function
     """
     app = Flask(__name__)
-    app.config.from_object(config_class)
-    
+    app.config.from_object(config[config_name]) # Use the config dictionary
+
     # Initialize extensions with app
     db.init_app(app)
     jwt.init_app(app)
@@ -36,17 +38,24 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     limiter.init_app(app)
-    
-    # Register blueprints (will be implemented later)
+
+    # Register blueprints
     register_blueprints(app)
-    
-    # Error handlers
+
+    # Register error handlers
     register_error_handlers(app)
-    
-    # Create database tables
+
+    # Create database tables if they don't exist
+    # This should ideally be handled by Flask-Migrate in production,
+    # but for initial setup, db.create_all() is useful.
     with app.app_context():
         db.create_all()
-    
+
+    # Optional: A simple route to check if the app is running
+    @app.route('/')
+    def index():
+        return "MyDuka Backend is running!"
+
     return app
 
 def register_blueprints(app):
@@ -54,8 +63,37 @@ def register_blueprints(app):
     Register all blueprints with the application
     """
     # Import and register blueprints here
-    # This will be implemented when we create the model files
-    pass
+    from app.models.merchant import merchant_bp
+    app.register_blueprint(merchant_bp, url_prefix='/merchant')
+
+    # Add more blueprint registrations as you create them
+    # from app.auth.login import auth_bp
+    # app.register_blueprint(auth_bp, url_prefix='/auth')
+
+    # from app.models.admin import admin_bp
+    # app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    # from app.models.clerk import clerk_bp
+    # app.register_blueprint(clerk_bp, url_prefix='/clerk')
+
+    # from app.models.store import store_bp
+    # app.register_blueprint(store_bp, url_prefix='/store')
+
+    # from app.models.product import product_bp
+    # app.register_blueprint(product_bp, url_prefix='/product')
+
+    # from app.models.inventory import inventory_bp
+    # app.register_blueprint(inventory_bp, url_prefix='/inventory')
+
+    # from app.models.transaction import transaction_bp
+    # app.register_blueprint(transaction_bp, url_prefix='/transaction')
+
+    # from app.models.supply_request import supply_request_bp
+    # app.register_blueprint(supply_request_bp, url_prefix='/supply-requests')
+
+    # from app.models.report import report_bp
+    # app.register_blueprint(report_bp, url_prefix='/reports')
+
 
 def register_error_handlers(app):
     """
@@ -63,20 +101,21 @@ def register_error_handlers(app):
     """
     @app.errorhandler(404)
     def not_found(error):
-        return {'error': 'Resource not found'}, 404
-    
+        return jsonify({'error': 'Resource not found'}), 404
+
     @app.errorhandler(400)
     def bad_request(error):
-        return {'error': 'Bad request'}, 400
-    
+        return jsonify({'error': 'Bad request'}), 400
+
     @app.errorhandler(401)
     def unauthorized(error):
-        return {'error': 'Unauthorized'}, 401
-    
+        return jsonify({'error': 'Unauthorized'}), 401
+
     @app.errorhandler(403)
     def forbidden(error):
-        return {'error': 'Forbidden'}, 403
-    
+        return jsonify({'error': 'Forbidden'}), 403
+
     @app.errorhandler(500)
     def internal_error(error):
-        return {'error': 'Internal server error'}, 500
+        return jsonify({'error': 'Internal server error'}), 500
+
