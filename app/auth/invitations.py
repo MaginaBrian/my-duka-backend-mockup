@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app import mail, db # Import mail and db
 from app.models.user_models import Merchant, Admin # Need Merchant to send, Admin to register
-from app.utils.validators import validate_email
+from app.utils.validators import validate_email, validate_password # <-- CORRECTED: Added validate_password
 from app.auth.permissions import merchant_required
 
 # Create a Blueprint for invitation routes
@@ -48,15 +48,7 @@ class AdminInvitation(Resource):
         )
 
         # Construct the invitation link for the frontend
-        # In a real app, this would point to a frontend registration page
-        # that consumes this token. For now, it's a placeholder.
-        # Ensure your frontend knows how to handle this token.
-        # Example: http://localhost:3000/register-admin?token=INVITATION_TOKEN
-        # For backend testing, we'll just show the token.
         invitation_link = f"http://localhost:5000/auth/register-admin-with-token?token={invitation_token}"
-        # In a production setup, you'd use a frontend URL, e.g.:
-        # invitation_link = f"{current_app.config.get('FRONTEND_URL')}/register-admin?token={invitation_token}"
-
 
         try:
             msg = Message(
@@ -83,8 +75,6 @@ class AdminRegistrationWithToken(Resource):
     """
     Allows an invited user to register as an Admin using a tokenized link.
     """
-    # Note: jwt_required(optional=True) is not strictly needed here as the token is from URL param.
-    # We will manually decode it.
     def post(self):
         token = request.args.get('token')
         if not token:
@@ -99,8 +89,9 @@ class AdminRegistrationWithToken(Resource):
         if decoded_token.get('purpose') != 'admin_invitation':
             return {'message': 'Invalid token purpose for admin registration'}, 403
 
-        invited_email = decoded_token['identity']['email']
-        invited_by_id = decoded_token['identity']['invited_by']
+        # Access the identity data from the 'sub' claim
+        invited_email = decoded_token['sub']['email']
+        invited_by_id = decoded_token['sub']['invited_by']
 
         # Now get user data from request body
         data = request.get_json()
@@ -109,7 +100,7 @@ class AdminRegistrationWithToken(Resource):
 
         if not all([username, password]):
             return {'message': 'Missing required fields: username, password'}, 400
-        if not validate_password(password):
+        if not validate_password(password): # <-- This line now has validate_password imported
             return {'message': 'Password does not meet requirements'}, 400
 
         # Ensure the email from the token matches the registration attempt
