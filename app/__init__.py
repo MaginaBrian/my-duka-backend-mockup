@@ -70,8 +70,8 @@ def register_blueprints(app):
     # from app.auth.login import auth_bp
     # app.register_blueprint(auth_bp, url_prefix='/auth')
 
-    # from app.models.admin import admin_bp
-    # app.register_blueprint(admin_bp, url_prefix='/admin')
+    from app.models.admin import admin_bp
+    app.register_blueprint(admin_bp, url_prefix='/admin')
 
     # from app.models.clerk import clerk_bp
     # app.register_blueprint(clerk_bp, url_prefix='/clerk')
