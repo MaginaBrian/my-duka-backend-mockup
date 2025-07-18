@@ -67,14 +67,18 @@ def register_blueprints(app):
     app.register_blueprint(merchant_bp, url_prefix='/merchant')
 
     # Add more blueprint registrations as you create them
-    # from app.auth.login import auth_bp
-    # app.register_blueprint(auth_bp, url_prefix='/auth')
+    from app.auth.login import auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/auth')
 
     from app.models.admin import admin_bp
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
     from app.models.clerk import clerk_bp
     app.register_blueprint(clerk_bp, url_prefix='/clerk')
+
+    from app.auth.invitations import invitations_bp
+    app.register_blueprint(invitations_bp, url_prefix='/auth') # Using /auth prefix for invitations too
+
 
     # from app.models.store import store_bp
     # app.register_blueprint(store_bp, url_prefix='/store')

@@ -34,7 +34,7 @@ class Config:
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
     
     # Invitation token expiry in hours
-    INVITATION_TOKEN_EXPIRY = 24
+    INVITATION_TOKEN_EXPIRY = int(os.environ.get('INVITATION_TOKEN_EXPIRY', 24))
     
     # CORS Configuration
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*').split(',')
