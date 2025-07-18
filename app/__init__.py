@@ -73,8 +73,8 @@ def register_blueprints(app):
     from app.models.admin import admin_bp
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
-    # from app.models.clerk import clerk_bp
-    # app.register_blueprint(clerk_bp, url_prefix='/clerk')
+    from app.models.clerk import clerk_bp
+    app.register_blueprint(clerk_bp, url_prefix='/clerk')
 
     # from app.models.store import store_bp
     # app.register_blueprint(store_bp, url_prefix='/store')
