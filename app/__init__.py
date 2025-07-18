@@ -80,8 +80,8 @@ def register_blueprints(app):
     app.register_blueprint(invitations_bp, url_prefix='/auth') # Using /auth prefix for invitations too
 
 
-    # from app.models.store import store_bp
-    # app.register_blueprint(store_bp, url_prefix='/store')
+    from app.models.store import store_bp
+    app.register_blueprint(store_bp, url_prefix='/store')
 
     # from app.models.product import product_bp
     # app.register_blueprint(product_bp, url_prefix='/product')
