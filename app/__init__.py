@@ -86,8 +86,8 @@ def register_blueprints(app):
     from app.models.products import product_bp
     app.register_blueprint(product_bp, url_prefix='/product')
 
-    # from app.models.inventory import inventory_bp
-    # app.register_blueprint(inventory_bp, url_prefix='/inventory')
+    from app.models.inventory import inventory_bp
+    app.register_blueprint(inventory_bp, url_prefix='/inventory')
 
     # from app.models.transaction import transaction_bp
     # app.register_blueprint(transaction_bp, url_prefix='/transaction')

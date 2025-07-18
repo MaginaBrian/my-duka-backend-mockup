@@ -14,9 +14,8 @@ class Merchant(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationship: A merchant can have multiple admins and multiple stores
     admins = db.relationship('Admin', backref='merchant', lazy=True)
-    stores = db.relationship('Store', backref='merchant', lazy=True) # New relationship
+    stores = db.relationship('Store', backref='merchant', lazy=True)
 
     def __repr__(self):
         return f'<Merchant {self.username}>'
@@ -51,9 +50,7 @@ class Admin(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     merchant_id = db.Column(db.Integer, db.ForeignKey('merchants.id'), nullable=False)
-    # --- MODIFIED LINE BELOW ---
-    store_id = db.Column(db.Integer, db.ForeignKey('stores.id', ondelete='SET NULL'), nullable=True) # Admin can be assigned to a store
-    # --- END MODIFIED LINE ---
+    store_id = db.Column(db.Integer, db.ForeignKey('stores.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -80,7 +77,7 @@ class Admin(db.Model):
             'email': self.email,
             'is_active': self.is_active,
             'merchant_id': self.merchant_id,
-            'store_id': self.store_id, # Include store_id in dict
+            'store_id': self.store_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
@@ -93,11 +90,13 @@ class Clerk(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     admin_id = db.Column(db.Integer, db.ForeignKey('admins.id', ondelete='SET NULL'), nullable=True)
-    # --- MODIFIED LINE BELOW ---
-    store_id = db.Column(db.Integer, db.ForeignKey('stores.id', ondelete='SET NULL'), nullable=True) # Clerk can be assigned to a store
-    # --- END MODIFIED LINE ---
+    store_id = db.Column(db.Integer, db.ForeignKey('stores.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # --- NEW RELATIONSHIP BELOW ---
+    inventories = db.relationship('Inventory', backref='clerk', lazy=True)
+    # --- END NEW RELATIONSHIP ---
 
     def __repr__(self):
         return f'<Clerk {self.username}>'
@@ -120,10 +119,7 @@ class Clerk(db.Model):
             'email': self.email,
             'is_active': self.is_active,
             'admin_id': self.admin_id,
-            'store_id': self.store_id, # Include store_id in dict
+            'store_id': self.store_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
-
-# Import this at the bottom to avoid circular imports with store.py
-# from app.models.store import Store # This will be defined in store.py

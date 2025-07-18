@@ -26,12 +26,12 @@ class Store(db.Model):
     location = db.Column(db.String(200), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     merchant_id = db.Column(db.Integer, db.ForeignKey('merchants.id'), nullable=False)
-    # Relationship: A store can have one admin assigned to it (one-to-one or one-to-many from store to admin)
-    # We'll use a backref from Admin to Store via store_id in Admin model.
-    # An admin can only be assigned to one store at a time, so the relationship is defined on Admin side.
-    # This means a store might not have an admin assigned initially.
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # --- NEW RELATIONSHIP BELOW ---
+    inventories = db.relationship('Inventory', backref='store', lazy=True)
+    # --- END NEW RELATIONSHIP ---
 
     def __repr__(self):
         return f'<Store {self.name}>'
@@ -47,13 +47,10 @@ class Store(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
-# --- API Resources ---
+# --- API Resources (rest of the file remains the same) ---
+# ... (rest of StoreListResource and StoreResource) ...
 
 class StoreListResource(Resource):
-    """
-    Handles listing all stores and creating new stores.
-    Merchant can create stores. Merchant and Admin can view stores.
-    """
     @jwt_required()
     def get(self):
         current_user_id = get_jwt_identity()
@@ -93,10 +90,6 @@ class StoreListResource(Resource):
             return {'message': 'An internal server error occurred during store creation.'}, 500
 
 class StoreResource(Resource):
-    """
-    Handles operations on a single store (get, update, delete).
-    Merchant can update/delete any store. Admin can update their assigned store.
-    """
     @jwt_required()
     def get(self, store_id):
         current_user_id = get_jwt_identity()
@@ -108,7 +101,6 @@ class StoreResource(Resource):
         if not store:
             return {'message': 'Store not found'}, 404
 
-        # Check permissions: Merchant can view any store. Admin can view their assigned store.
         if is_merchant:
             return {'store': store.to_dict()}, 200
         elif admin and admin.store_id == store_id:
@@ -127,20 +119,18 @@ class StoreResource(Resource):
         if not store:
             return {'message': 'Store not found'}, 404
 
-        # Permission check for update: Only Merchant or the assigned Admin can update
         if not (is_merchant or (admin and admin.store_id == store_id)):
             return {'message': 'Unauthorized to update this store'}, 403
 
         data = request.get_json()
         name = data.get('name', store.name)
         location = data.get('location', store.location)
-        is_active = data.get('is_active', store.is_active) # Only merchant can change active status
+        is_active = data.get('is_active', store.is_active)
 
         if name:
             store.name = name
         if location:
             store.location = location
-        # Only merchant can change is_active status of a store
         if isinstance(is_active, bool) and is_merchant:
             store.is_active = is_active
         elif isinstance(is_active, bool) and not is_merchant and is_active != store.is_active:
@@ -158,7 +148,7 @@ class StoreResource(Resource):
             return {'message': 'An internal server error occurred during store update.'}, 500
 
     @jwt_required()
-    @merchant_required() # Only Merchant can delete a store
+    @merchant_required()
     def delete(self, store_id):
         store = Store.query.get(store_id)
         if not store:
