@@ -9,7 +9,7 @@ from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from app.config import config # Import the config dictionary
+from app.config import config 
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -46,8 +46,6 @@ def create_app(config_name='default'): # Changed default to 'default' to match c
     register_error_handlers(app)
 
     # Create database tables if they don't exist
-    # This should ideally be handled by Flask-Migrate in production,
-    # but for initial setup, db.create_all() is useful.
     with app.app_context():
         db.create_all()
 
@@ -66,37 +64,42 @@ def register_blueprints(app):
     from app.models.merchant import merchant_bp
     app.register_blueprint(merchant_bp, url_prefix='/merchant')
 
-    # Add more blueprint registrations as you create them
-    from app.auth.login import auth_bp
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-
     from app.models.admin import admin_bp
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
     from app.models.clerk import clerk_bp
     app.register_blueprint(clerk_bp, url_prefix='/clerk')
 
+    # Authentication Blueprints
+    from app.auth.login import auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+
     from app.auth.invitations import invitations_bp
-    app.register_blueprint(invitations_bp, url_prefix='/auth') # Using /auth prefix for invitations too
+    app.register_blueprint(invitations_bp, url_prefix='/auth')
 
-
+    # Store Blueprint
     from app.models.store import store_bp
     app.register_blueprint(store_bp, url_prefix='/store')
 
+    # Product Blueprint
     from app.models.products import product_bp
     app.register_blueprint(product_bp, url_prefix='/product')
 
+    # Inventory Blueprint
     from app.models.inventory import inventory_bp
     app.register_blueprint(inventory_bp, url_prefix='/inventory')
 
-    # from app.models.transaction import transaction_bp
-    # app.register_blueprint(transaction_bp, url_prefix='/transaction')
+    # Transaction Blueprint
+    from app.models.transactions import transaction_bp
+    app.register_blueprint(transaction_bp, url_prefix='/transaction')
 
-    # from app.models.supply_request import supply_request_bp
-    # app.register_blueprint(supply_request_bp, url_prefix='/supply-requests')
+    # Supply Request Blueprint
+    from app.models.supply_request import supply_request_bp
+    app.register_blueprint(supply_request_bp, url_prefix='/supply-requests')
 
-    # from app.models.report import report_bp
-    # app.register_blueprint(report_bp, url_prefix='/reports')
+    # Report Blueprint
+    from app.models.reports import report_bp
+    app.register_blueprint(report_bp, url_prefix='/reports')
 
 
 def register_error_handlers(app):
