@@ -1,4 +1,4 @@
-# app/models/user_models.py
+
 
 from app import db, bcrypt
 from datetime import datetime
@@ -16,6 +16,7 @@ class Merchant(db.Model):
 
     admins = db.relationship('Admin', backref='merchant', lazy=True)
     stores = db.relationship('Store', backref='merchant', lazy=True)
+    products = db.relationship('Product', backref='merchant', lazy=True) 
 
     def __repr__(self):
         return f'<Merchant {self.username}>'
@@ -55,6 +56,9 @@ class Admin(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     clerks = db.relationship('Clerk', backref='admin', lazy=True)
+   
+    supply_requests_approved = db.relationship('SupplyRequest', backref='approved_by_admin', lazy=True)
+   
 
     def __repr__(self):
         return f'<Admin {self.username}>'
@@ -94,9 +98,11 @@ class Clerk(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # --- NEW RELATIONSHIP BELOW ---
     inventories = db.relationship('Inventory', backref='clerk', lazy=True)
-    # --- END NEW RELATIONSHIP ---
+    
+    transactions = db.relationship('Transaction', backref='clerk', lazy=True)
+    supply_requests_made = db.relationship('SupplyRequest', backref='requested_by_clerk', lazy=True)
+    
 
     def __repr__(self):
         return f'<Clerk {self.username}>'
