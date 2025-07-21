@@ -1,16 +1,16 @@
-# app/models/store.py
+
 
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 
-from app import db # Import db from your app initialization
-from app.models.user_models import Merchant, Admin # Import Merchant and Admin models
-from app.auth.permissions import merchant_required, admin_required # Import permission decorators
+from app import db 
+from app.models.user_models import Merchant, Admin 
+from app.auth.permissions import merchant_required, admin_required 
 from datetime import datetime
 
-# Create a Blueprint for store-related routes
+
 store_bp = Blueprint('store_bp', __name__)
 api = Api(store_bp)
 
@@ -29,9 +29,9 @@ class Store(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # --- NEW RELATIONSHIP BELOW ---
+   
     inventories = db.relationship('Inventory', backref='store', lazy=True)
-    # --- END NEW RELATIONSHIP ---
+   
 
     def __repr__(self):
         return f'<Store {self.name}>'
@@ -46,9 +46,6 @@ class Store(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
-
-# --- API Resources (rest of the file remains the same) ---
-# ... (rest of StoreListResource and StoreResource) ...
 
 class StoreListResource(Resource):
     @jwt_required()
@@ -163,7 +160,7 @@ class StoreResource(Resource):
             print(f"Error deleting store: {e}")
             return {'message': 'An internal server error occurred during store deletion.'}, 500
 
-# Add resources to the API
+
 api.add_resource(StoreListResource, '/')
 api.add_resource(StoreResource, '/<int:store_id>')
 

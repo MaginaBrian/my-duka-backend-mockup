@@ -125,23 +125,23 @@ class SupplyRequestListResource(Resource):
         except ValueError:
             return {'message': 'product_id and quantity_requested must be valid numbers'}, 400
 
-        # Check if product exists
+        
         product = Product.query.get(product_id)
         if not product:
             return {'message': f'Product with ID {product_id} not found'}, 404
 
-        # Ensure clerk is assigned to a store to make a request for that store
+        
         if not clerk.store_id:
             return {'message': 'Clerk must be assigned to a store to make a supply request'}, 403
 
         try:
             new_request = SupplyRequest(
                 product_id=product_id,
-                store_id=clerk.store_id, # Request is for the clerk's assigned store
+                store_id=clerk.store_id, 
                 requested_by_clerk_id=current_clerk_id,
                 quantity_requested=quantity_requested,
                 notes=notes,
-                status='Pending' # Initial status
+                status='Pending' 
             )
             db.session.add(new_request)
             db.session.commit()
@@ -166,9 +166,9 @@ class SupplyRequestResource(Resource):
         if not req:
             return {'message': 'Supply request not found'}, 404
 
-        # Permission checks for viewing a single request
+        
         if user_type == 'merchant':
-            pass # Merchants can view any request
+            pass 
         elif user_type == 'admin':
             admin = Admin.query.get(current_user_id)
             if not admin or (admin.store_id and admin.store_id != req.store_id):
@@ -183,24 +183,23 @@ class SupplyRequestResource(Resource):
         return {'supply_request': req.to_dict()}, 200
 
     @jwt_required()
-    @admin_required() # Only Admin can update status
+    @admin_required() 
     def put(self, request_id):
         current_admin_id = get_jwt_identity()
         admin = Admin.query.get(current_admin_id)
         if not admin:
-            return {'message': 'Admin not found'}, 404 # Should not happen with admin_required
+            return {'message': 'Admin not found'}, 404 
 
         req = SupplyRequest.query.get(request_id)
         if not req:
             return {'message': 'Supply request not found'}, 404
 
-        # Ensure admin is assigned to the store for which the request was made
+        
         if admin.store_id and admin.store_id != req.store_id:
             return {'message': 'Admin is not assigned to this store to approve requests'}, 403
 
         data = request.get_json()
-        status = data.get('status') # Can be 'Approved', 'Declined', 'Fulfilled'
-        notes = data.get('notes', req.notes) # Admin can add notes
+        notes = data.get('notes', req.notes) 
 
         if not status:
             return {'message': 'Status is required to update supply request'}, 400
@@ -209,7 +208,7 @@ class SupplyRequestResource(Resource):
         if status not in valid_statuses:
             return {'message': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}, 400
 
-        # Prevent changing status if already Fulfilled or Declined
+        
         if req.status in ['Fulfilled', 'Declined'] and status != req.status:
             return {'message': 'Cannot change status of a fulfilled or declined request'}, 400
 
@@ -227,7 +226,7 @@ class SupplyRequestResource(Resource):
             return {'message': 'An internal server error occurred during request update.'}, 500
 
     @jwt_required()
-    @merchant_required() # Only Merchant can delete supply requests
+    @merchant_required() 
     def delete(self, request_id):
         req = SupplyRequest.query.get(request_id)
         if not req:
@@ -242,6 +241,6 @@ class SupplyRequestResource(Resource):
             print(f"Error deleting supply request: {e}")
             return {'message': 'An internal server error occurred during request deletion.'}, 500
 
-# Add resources to the API
+
 api.add_resource(SupplyRequestListResource, '/')
 api.add_resource(SupplyRequestResource, '/<int:request_id>')

@@ -1,4 +1,4 @@
-# app/auth/invitations.py
+
 
 from flask import Blueprint, request, jsonify, url_for, current_app
 from flask_restful import Api, Resource
@@ -7,12 +7,12 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from datetime import timedelta
 from sqlalchemy.exc import IntegrityError
 
-from app import mail, db # Import mail and db
-from app.models.user_models import Merchant, Admin # Need Merchant to send, Admin to register
-from app.utils.validators import validate_email, validate_password # <-- CORRECTED: Added validate_password
+from app import mail, db 
+from app.models.user_models import Merchant, Admin 
+from app.utils.validators import validate_email, validate_password 
 from app.auth.permissions import merchant_required
 
-# Create a Blueprint for invitation routes
+
 invitations_bp = Blueprint('invitations_bp', __name__)
 api = Api(invitations_bp)
 
@@ -26,21 +26,18 @@ class AdminInvitation(Resource):
     def post(self):
         data = request.get_json()
         email = data.get('email')
-        invited_by_id = get_jwt_identity() # The merchant sending the invite
+        invited_by_id = get_jwt_identity() 
 
         if not email:
             return {'message': 'Email is required for invitation'}, 400
         if not validate_email(email):
             return {'message': 'Invalid email format'}, 400
 
-        # Check if an admin with this email already exists
+        
         if Admin.query.filter_by(email=email).first():
             return {'message': 'An admin with this email already exists'}, 409
 
-        # Create a temporary token for the invitation.
-        # This token will contain the invited email and the inviter's ID.
-        # It will have a short expiry time (e.g., 24 hours).
-        # We'll use a custom claim 'purpose' to distinguish it from regular access tokens.
+      
         invitation_token = create_access_token(
             identity={'email': email, 'invited_by': invited_by_id},
             expires_delta=timedelta(hours=current_app.config['INVITATION_TOKEN_EXPIRY']),
@@ -81,7 +78,7 @@ class AdminRegistrationWithToken(Resource):
             return {'message': 'Invitation token is missing'}, 400
 
         try:
-            # Manually decode and verify the token
+            #
             decoded_token = decode_token(token)
         except Exception as e:
             return {'message': f'Invalid or expired token: {str(e)}'}, 401
@@ -89,21 +86,21 @@ class AdminRegistrationWithToken(Resource):
         if decoded_token.get('purpose') != 'admin_invitation':
             return {'message': 'Invalid token purpose for admin registration'}, 403
 
-        # Access the identity data from the 'sub' claim
+        
         invited_email = decoded_token['sub']['email']
         invited_by_id = decoded_token['sub']['invited_by']
 
-        # Now get user data from request body
+        
         data = request.get_json()
         username = data.get('username')
         password = data.get('password')
 
         if not all([username, password]):
             return {'message': 'Missing required fields: username, password'}, 400
-        if not validate_password(password): # <-- This line now has validate_password imported
+        if not validate_password(password): 
             return {'message': 'Password does not meet requirements'}, 400
 
-        # Ensure the email from the token matches the registration attempt
+       
         if Admin.query.filter_by(email=invited_email).first():
             return {'message': 'An admin with this email already exists'}, 409
 
@@ -121,7 +118,7 @@ class AdminRegistrationWithToken(Resource):
             print(f"Error during token-based admin registration: {e}")
             return {'message': 'An internal server error occurred during registration.'}, 500
 
-# Add resources to the API
+
 api.add_resource(AdminInvitation, '/invite-admin')
 api.add_resource(AdminRegistrationWithToken, '/register-admin-with-token')
 

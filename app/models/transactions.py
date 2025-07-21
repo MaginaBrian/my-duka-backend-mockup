@@ -1,4 +1,4 @@
-# app/models/transaction.py
+
 
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
@@ -9,11 +9,11 @@ from app import db
 from app.models.user_models import Merchant, Admin, Clerk
 from app.models.products import Product
 from app.models.store import Store
-from app.models.inventory import Inventory # To update stock on sale
+from app.models.inventory import Inventory 
 from app.auth.permissions import merchant_required, admin_required, clerk_required
 from datetime import datetime
 
-# Create a Blueprint for transaction-related routes
+
 transaction_bp = Blueprint('transaction_bp', __name__)
 api = Api(transaction_bp)
 
@@ -29,8 +29,8 @@ class Transaction(db.Model):
     clerk_id = db.Column(db.Integer, db.ForeignKey('clerks.id', ondelete='SET NULL'), nullable=True)
 
     quantity_sold = db.Column(db.Integer, nullable=False)
-    selling_price_at_transaction = db.Column(db.Float, nullable=False) # Price at the time of sale
-    total_revenue = db.Column(db.Float, nullable=False) # quantity_sold * selling_price_at_transaction
+    selling_price_at_transaction = db.Column(db.Float, nullable=False) 
+    total_revenue = db.Column(db.Float, nullable=False) 
 
     transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -58,7 +58,7 @@ class Transaction(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
-# --- API Resources ---
+
 
 class TransactionListResource(Resource):
     """
@@ -80,7 +80,7 @@ class TransactionListResource(Resource):
             admin = Admin.query.get(current_user_id)
             if not admin:
                 return {'message': 'Admin not found'}, 404
-            if admin.store_id: # Admins can only see transactions for their assigned store
+            if admin.store_id: 
                 query = query.filter_by(store_id=admin.store_id)
             else:
                 return {'message': 'Admin not assigned to a store. Cannot view transactions.'}, 403
@@ -88,20 +88,20 @@ class TransactionListResource(Resource):
             clerk = Clerk.query.get(current_user_id)
             if not clerk:
                 return {'message': 'Clerk not found'}, 404
-            # Clerks can only view transactions they created
+           
             query = query.filter_by(clerk_id=current_user_id)
-        # Merchant can see all records, no filter needed for merchant_id here as transactions are global per merchant
+        
 
         transactions = query.all()
         return {'transactions': [transaction.to_dict() for transaction in transactions]}, 200
 
     @jwt_required()
-    @clerk_required() # Only clerks can create transactions
+    @clerk_required() 
     def post(self):
         current_clerk_id = get_jwt_identity()
         clerk = Clerk.query.get(current_clerk_id)
         if not clerk:
-            return {'message': 'Clerk not found'}, 404 # Should not happen with clerk_required
+            return {'message': 'Clerk not found'}, 404 
 
         data = request.get_json()
         product_id = data.get('product_id')
@@ -111,7 +111,7 @@ class TransactionListResource(Resource):
         if not all([product_id, store_id, quantity_sold is not None]):
             return {'message': 'Missing required fields: product_id, store_id, quantity_sold'}, 400
 
-        # Validate inputs
+        
         try:
             product_id = int(product_id)
             store_id = int(store_id)
@@ -121,7 +121,7 @@ class TransactionListResource(Resource):
         except ValueError:
             return {'message': 'product_id, store_id, quantity_sold must be valid numbers'}, 400
 
-        # Check if product and store exist
+        
         product = Product.query.get(product_id)
         if not product:
             return {'message': f'Product with ID {product_id} not found'}, 404
@@ -130,12 +130,11 @@ class TransactionListResource(Resource):
         if not store:
             return {'message': f'Store with ID {store_id} not found'}, 404
 
-        # Ensure clerk is assigned to the store they are recording for (optional, but good practice)
+        
         if clerk.store_id and clerk.store_id != store_id:
             return {'message': 'Clerk is not assigned to this store'}, 403
 
-        # Check current stock from the latest inventory record for the product in that store
-        # This is a simplification; a real system might have a dedicated 'current_stock' table
+        
         latest_inventory_record = Inventory.query.filter_by(
             product_id=product_id,
             store_id=store_id
@@ -146,7 +145,7 @@ class TransactionListResource(Resource):
 
         try:
             # Create the transaction record
-            selling_price = product.selling_price # Use current selling price from product master
+            selling_price = product.selling_price 
             total_revenue = selling_price * quantity_sold
 
             new_transaction = Transaction(
@@ -161,7 +160,7 @@ class TransactionListResource(Resource):
 
             # Update the latest inventory record's stock
             latest_inventory_record.items_in_stock -= quantity_sold
-            db.session.add(latest_inventory_record) # Mark for update
+            db.session.add(latest_inventory_record) 
 
             db.session.commit()
             return {'message': 'Transaction recorded successfully', 'transaction': new_transaction.to_dict()}, 201
@@ -187,7 +186,7 @@ class TransactionResource(Resource):
 
         # Permission checks for viewing a single record
         if user_type == 'merchant':
-            # Merchants can view any record
+            
             pass
         elif user_type == 'admin':
             admin = Admin.query.get(current_user_id)
@@ -195,7 +194,7 @@ class TransactionResource(Resource):
                 return {'message': 'Unauthorized to view this transaction record'}, 403
         elif user_type == 'clerk':
             clerk = Clerk.query.get(current_user_id)
-            if not clerk or clerk.id != transaction.clerk_id: # Clerks can only view their own records
+            if not clerk or clerk.id != transaction.clerk_id: 
                 return {'message': 'Unauthorized to view this transaction record'}, 403
         else:
             return {'message': 'Authentication required to view transaction record'}, 403
@@ -203,17 +202,14 @@ class TransactionResource(Resource):
         return {'transaction_record': transaction.to_dict()}, 200
 
     @jwt_required()
-    @merchant_required() # Only Merchant can delete transaction records
+    @merchant_required() 
     def delete(self, transaction_id):
         transaction = Transaction.query.get(transaction_id)
         if not transaction:
             return {'message': 'Transaction not found'}, 404
 
         try:
-            # When deleting a transaction, we should ideally reverse the stock change.
-            # This makes deletion complex and often discouraged in real inventory systems.
-            # For simplicity, we'll just delete the transaction record.
-            # A more robust solution would involve a separate "return" or "adjustment" mechanism.
+            
             db.session.delete(transaction)
             db.session.commit()
             return {'message': 'Transaction deleted successfully'}, 204
@@ -222,6 +218,6 @@ class TransactionResource(Resource):
             print(f"Error deleting transaction: {e}")
             return {'message': 'An internal server error occurred during transaction deletion.'}, 500
 
-# Add resources to the API
+
 api.add_resource(TransactionListResource, '/')
 api.add_resource(TransactionResource, '/<int:transaction_id>')

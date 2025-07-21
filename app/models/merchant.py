@@ -1,20 +1,20 @@
-# app/models/merchant.py
+
 
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 
-from app import db # Import db from your app initialization
-from app.models.user_models import Merchant # Import Merchant from the new user_models file
+from app import db 
+from app.models.user_models import Merchant 
 from app.utils.validators import validate_email, validate_password
-from app.auth.permissions import merchant_required # This is the decorator factory
+from app.auth.permissions import merchant_required 
 
-# Create a Blueprint for merchant-related routes
+
 merchant_bp = Blueprint('merchant_bp', __name__)
 api = Api(merchant_bp)
 
-# --- API Resources ---
+
 
 class MerchantRegistration(Resource):
     """
@@ -28,7 +28,6 @@ class MerchantRegistration(Resource):
         email = data.get('email')
         password = data.get('password')
 
-        # Basic input validation
         if not all([username, email, password]):
             return {'message': 'Missing required fields: username, email, password'}, 400
         if not validate_email(email):
@@ -36,13 +35,13 @@ class MerchantRegistration(Resource):
         if not validate_password(password):
             return {'message': 'Password does not meet requirements'}, 400
 
-        # Check if a merchant already exists (only one superuser allowed initially)
+        
         if Merchant.query.first():
             return {'message': 'Superuser (Merchant) already exists. Registration not allowed.'}, 403
 
         try:
             new_merchant = Merchant(username=username, email=email)
-            new_merchant.password = password # This uses the setter to hash the password
+            new_merchant.password = password 
             db.session.add(new_merchant)
             db.session.commit()
             return {'message': 'Superuser (Merchant) registered successfully', 'merchant': new_merchant.to_dict()}, 201
@@ -51,7 +50,7 @@ class MerchantRegistration(Resource):
             return {'message': 'Username or email already exists'}, 409
         except Exception as e:
             db.session.rollback()
-            # Log the exception for debugging in a real application
+            
             print(f"Error during merchant registration: {e}")
             return {'message': 'An internal server error occurred during registration.'}, 500
 
@@ -61,7 +60,7 @@ class MerchantResource(Resource):
     Requires merchant authentication.
     """
     @jwt_required()
-    @merchant_required() # <-- CORRECTED: Added parentheses here
+    @merchant_required() 
     def get(self):
         current_user_id = get_jwt_identity()
         merchant = Merchant.query.get(current_user_id)
@@ -70,7 +69,7 @@ class MerchantResource(Resource):
         return {'merchant': merchant.to_dict()}, 200
 
     @jwt_required()
-    @merchant_required() # <-- CORRECTED: Added parentheses here
+    @merchant_required() 
     def put(self):
         current_user_id = get_jwt_identity()
         merchant = Merchant.query.get(current_user_id)
@@ -92,7 +91,7 @@ class MerchantResource(Resource):
         if password:
             if not validate_password(password):
                 return {'message': 'Password does not meet requirements'}, 400
-            merchant.password = password # This hashes the new password
+            merchant.password = password 
         if isinstance(is_active, bool):
             merchant.is_active = is_active
 
@@ -108,7 +107,7 @@ class MerchantResource(Resource):
             return {'message': 'An internal server error occurred during update.'}, 500
 
     @jwt_required()
-    @merchant_required() # <-- CORRECTED: Added parentheses here
+    @merchant_required() 
     def delete(self):
         """
         Deletes the merchant account. This should be handled with extreme caution
@@ -128,7 +127,7 @@ class MerchantResource(Resource):
             print(f"Error during merchant deletion: {e}")
             return {'message': 'An internal server error occurred during deletion.'}, 500
 
-# Add resources to the API
+
 api.add_resource(MerchantRegistration, '/register')
 api.add_resource(MerchantResource, '/profile')
 

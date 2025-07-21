@@ -1,4 +1,4 @@
-# app/auth/login.py
+
 
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
@@ -8,16 +8,15 @@ from flask_jwt_extended import (
 )
 from datetime import timedelta
 
-from app import db, jwt # Import db and jwt from your app initialization
-from app.models.user_models import Merchant, Admin, Clerk # Import all user models
-from app.utils.validators import validate_email # For login validation
+from app import db, jwt 
+from app.models.user_models import Merchant, Admin, Clerk 
+from app.utils.validators import validate_email 
 
-# Create a Blueprint for authentication routes
+
 auth_bp = Blueprint('auth_bp', __name__)
 api = Api(auth_bp)
 
-# --- JWT Blacklist Setup (for logout) ---
-# This set will store all revoked tokens
+
 blacklist = set()
 
 @jwt.token_in_blocklist_loader
@@ -28,7 +27,7 @@ def check_if_token_in_blacklist(jwt_header, jwt_payload):
     jti = jwt_payload["jti"]
     return jti in blacklist
 
-# --- API Resources ---
+
 
 class UserLogin(Resource):
     """
@@ -47,8 +46,7 @@ class UserLogin(Resource):
         user = None
         user_type = None
 
-        # Try to find user in each model
-        # Prioritize Merchant, then Admin, then Clerk
+        
         merchant = Merchant.query.filter_by(email=email).first()
         if merchant:
             user = merchant
@@ -70,8 +68,7 @@ class UserLogin(Resource):
         if not user.is_active:
             return {'message': 'Account is inactive. Please contact support.'}, 403
 
-        # Create JWT tokens
-        # The identity in the token will be the user's ID
+       
         access_token = create_access_token(identity=user.id, additional_claims={"user_type": user_type})
         refresh_token = create_refresh_token(identity=user.id, additional_claims={"user_type": user_type})
 
@@ -89,25 +86,25 @@ class UserLogout(Resource):
     """
     @jwt_required()
     def post(self):
-        jti = get_jwt()["jti"] # Get the unique identifier for the token
-        blacklist.add(jti) # Add the token's JTI to the blacklist
+        jti = get_jwt()["jti"] 
+        blacklist.add(jti) 
         return {'message': 'Successfully logged out'}, 200
 
 class TokenRefresh(Resource):
     """
     Allows users to get a new access token using their refresh token.
     """
-    @jwt_required(refresh=True) # Requires a refresh token
+    @jwt_required(refresh=True) 
     def post(self):
         current_user_id = get_jwt_identity()
         user_claims = get_jwt()
         user_type = user_claims.get("user_type")
 
-        # Re-create an access token
+        
         new_access_token = create_access_token(identity=current_user_id, additional_claims={"user_type": user_type})
         return {'access_token': new_access_token}, 200
 
-# Add resources to the API
+
 api.add_resource(UserLogin, '/login')
 api.add_resource(UserLogout, '/logout')
 api.add_resource(TokenRefresh, '/refresh')

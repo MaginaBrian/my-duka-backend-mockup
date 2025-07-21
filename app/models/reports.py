@@ -1,11 +1,11 @@
-# app/models/report.py
+
 
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy import func, extract
 from datetime import datetime, timedelta
-import calendar # For getting days in month
+import calendar 
 
 from app import db
 from app.models.user_models import Merchant, Admin, Clerk
@@ -16,7 +16,7 @@ from app.models.transactions import Transaction
 from app.models.supply_request import SupplyRequest
 from app.auth.permissions import merchant_required, admin_required
 
-# Create a Blueprint for report-related routes
+
 report_bp = Blueprint('report_bp', __name__)
 api = Api(report_bp)
 
@@ -29,7 +29,7 @@ class BaseReportResource(Resource):
     def get_authorized_query(self, model_class, user_id, user_type):
         query = model_class.query
         if user_type == 'merchant':
-            # Merchants can see all data
+            
             pass
         elif user_type == 'admin':
             admin = Admin.query.get(user_id)
@@ -37,7 +37,7 @@ class BaseReportResource(Resource):
                 return None, {'message': 'Admin not found'}, 404
             if not admin.store_id:
                 return None, {'message': 'Admin not assigned to a store. Cannot generate store-specific reports.'}, 403
-            # Admins can only see data for their assigned store
+          
             query = query.filter_by(store_id=admin.store_id)
         else:
             return None, {'message': 'Unauthorized to view reports'}, 403
@@ -52,7 +52,7 @@ class BaseReportResource(Resource):
                 return None, {'message': 'Invalid start_date format. Use YYYY-MM-DD'}, 400
         if end_date_str:
             try:
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d') + timedelta(days=1) # Include whole end day
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d') + timedelta(days=1) 
                 query = query.filter(date_column < end_date)
             except ValueError:
                 return None, {'message': 'Invalid end_date format. Use YYYY-MM-DD'}, 400
@@ -71,23 +71,23 @@ class SalesReportResource(BaseReportResource):
         if error_response:
             return error_response, status_code
 
-        # Get query parameters for date range
+        
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
-        report_type = request.args.get('type', 'daily').lower() # daily, weekly, monthly, annual
+        report_type = request.args.get('type', 'daily').lower() 
 
         query, error_response, status_code = self.apply_date_filter(query, Transaction.transaction_date, start_date_str, end_date_str)
         if error_response:
             return error_response, status_code
 
-        # Default to last 30 days if no date range is specified
+        
         if not start_date_str and not end_date_str:
             end_date = datetime.utcnow()
             start_date = end_date - timedelta(days=30)
             query = query.filter(Transaction.transaction_date >= start_date, Transaction.transaction_date <= end_date)
 
 
-        # Grouping logic based on report_type
+        
         if report_type == 'daily':
             results = query.with_entities(
                 func.date(Transaction.transaction_date).label('date'),
@@ -132,12 +132,12 @@ class StockReportResource(BaseReportResource):
         claims = get_jwt()
         user_type = claims.get('user_type')
 
-        # Stock reports are based on Inventory records
+        
         query, error_response, status_code = self.get_authorized_query(Inventory, user_id, user_type)
         if error_response:
             return error_response, status_code
 
-        # Get query parameters
+        
         product_id = request.args.get('product_id', type=int)
         store_id = request.args.get('store_id', type=int)
 
@@ -146,19 +146,13 @@ class StockReportResource(BaseReportResource):
         if store_id:
             query = query.filter_by(store_id=store_id)
 
-        # Get the latest stock for each product in each store
-        # This is complex in SQL without subqueries or window functions.
-        # A simpler approach for Flask-SQLAlchemy is to get all relevant records
-        # and then process them in Python to find the latest.
-        # For a large dataset, a dedicated "current_stock" table would be better.
-
-        # Fetch all relevant inventory records
+       
         all_records = query.order_by(Inventory.date_recorded.desc()).all()
 
         current_stock = {}
         for record in all_records:
             key = (record.product_id, record.store_id)
-            if key not in current_stock: # Only take the latest record for each product-store pair
+            if key not in current_stock: 
                 product = Product.query.get(record.product_id)
                 store = Store.query.get(record.store_id)
                 current_stock[key] = {
@@ -193,7 +187,7 @@ class SpoiltItemsReportResource(BaseReportResource):
         if error_response:
             return error_response, status_code
 
-        # Filter for records with spoilt items
+        
         query = query.filter(Inventory.items_spoilt > 0)
 
         results = query.with_entities(
@@ -229,7 +223,7 @@ class PaymentStatusReportResource(BaseReportResource):
 
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
-        payment_status_filter = request.args.get('payment_status') # 'paid' or 'unpaid'
+        payment_status_filter = request.args.get('payment_status') 
 
         query, error_response, status_code = self.apply_date_filter(query, Inventory.date_recorded, start_date_str, end_date_str)
         if error_response:
@@ -262,7 +256,7 @@ class PaymentStatusReportResource(BaseReportResource):
         return {'report_type': 'payment_status', 'data': report_data}, 200
 
 
-# Add resources to the API
+
 api.add_resource(SalesReportResource, '/sales')
 api.add_resource(StockReportResource, '/stock')
 api.add_resource(SpoiltItemsReportResource, '/spoilt-items')

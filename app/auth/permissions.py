@@ -1,9 +1,9 @@
-# app/auth/permissions.py
+
 
 from functools import wraps
 from flask import jsonify
 from flask_jwt_extended import get_jwt_identity
-from app.models.user_models import Merchant, Admin, Clerk # Import all user models
+from app.models.user_models import Merchant, Admin, Clerk 
 
 def merchant_required():
     """
@@ -31,7 +31,7 @@ def admin_required():
             current_user_id = get_jwt_identity()
             admin = Admin.query.get(current_user_id)
 
-            if not admin: # Admins are not superusers by default
+            if not admin: 
                 return jsonify({'message': 'Admin access required'}), 403
             return fn(*args, **kwargs)
         return decorator

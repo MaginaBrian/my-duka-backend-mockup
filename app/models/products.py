@@ -1,4 +1,4 @@
-# app/models/product.py
+
 
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
@@ -10,7 +10,7 @@ from app.models.user_models import Merchant, Admin, Clerk
 from app.auth.permissions import merchant_required, admin_required, clerk_required
 from datetime import datetime
 
-# Create a Blueprint for product-related routes
+
 product_bp = Blueprint('product_bp', __name__)
 api = Api(product_bp)
 
@@ -30,9 +30,9 @@ class Product(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # --- NEW RELATIONSHIP BELOW ---
+    
     inventories = db.relationship('Inventory', backref='product', lazy=True)
-    # --- END NEW RELATIONSHIP ---
+   
 
     def __repr__(self):
         return f'<Product {self.name}>'
@@ -50,8 +50,6 @@ class Product(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
-# --- API Resources (rest of the file remains the same) ---
-# ... (rest of ProductListResource and ProductResource) ...
 
 class ProductListResource(Resource):
     @jwt_required()
@@ -222,7 +220,7 @@ class ProductResource(Resource):
             print(f"Error deleting product: {e}")
             return {'message': 'An internal server error occurred during product deletion.'}, 500
 
-# Add resources to the API
+
 api.add_resource(ProductListResource, '/')
 api.add_resource(ProductResource, '/<int:product_id>')
 

@@ -1,7 +1,7 @@
-# app/utils/validators.py
+
 
 import re
-import validators # This library is in your requirements.txt
+import validators 
 
 def validate_email(email):
     """
@@ -27,4 +27,4 @@ def validate_password(password):
         return False # No special character
     return True
 
-# Add more validators as needed (e.g., validate_phone_number, validate_name)
+

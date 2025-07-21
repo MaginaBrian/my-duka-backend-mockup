@@ -1,4 +1,4 @@
-# app/__init__.py
+
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -20,15 +20,15 @@ migrate = Migrate()
 bcrypt = Bcrypt()
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["1000 per hour"] # Default rate limit
+    default_limits=["1000 per hour"]
 )
 
-def create_app(config_name='default'): # Changed default to 'default' to match config dict
+def create_app(config_name='default'): 
     """
     Application factory function
     """
     app = Flask(__name__)
-    app.config.from_object(config[config_name]) # Use the config dictionary
+    app.config.from_object(config[config_name]) 
 
     # Initialize extensions with app
     db.init_app(app)
@@ -49,7 +49,7 @@ def create_app(config_name='default'): # Changed default to 'default' to match c
     with app.app_context():
         db.create_all()
 
-    # Optional: A simple route to check if the app is running
+    # check if the app is running
     @app.route('/')
     def index():
         return "MyDuka Backend is running!"
@@ -60,7 +60,7 @@ def register_blueprints(app):
     """
     Register all blueprints with the application
     """
-    # Import and register blueprints here
+    
     from app.models.merchant import merchant_bp
     app.register_blueprint(merchant_bp, url_prefix='/merchant')
 

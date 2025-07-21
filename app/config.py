@@ -9,16 +9,16 @@ class Config:
     """
     Base configuration class
     """
-    # Basic Flask configuration
+    
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key-change-this-in-production'
     
-    # Database configuration
+    #
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'postgresql://myduka_user:password@localhost/myduka_db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_RECORD_QUERIES = True
     
-    # JWT Configuration
+   
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-string-change-this'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
@@ -43,7 +43,7 @@ class Config:
     ITEMS_PER_PAGE = int(os.environ.get('ITEMS_PER_PAGE', 20))
     
     # File upload configuration
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'uploads')
     
     # Redis configuration (for session management and caching)
@@ -77,7 +77,7 @@ class ProductionConfig(Config):
     """
     DEBUG = False
 
-# Configuration dictionary
+
 config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
