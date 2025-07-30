@@ -1,6 +1,4 @@
-
-
-from flask import Flask
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
@@ -34,7 +32,8 @@ def create_app(config_name='default'):
     db.init_app(app)
     jwt.init_app(app)
     mail.init_app(app)
-    cors.init_app(app)
+    # Configure CORS to allow requests from frontend origins with credentials support
+    cors.init_app(app, resources={r"/*": {"origins": app.config['CORS_ORIGINS'], "supports_credentials": True}})
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     limiter.init_app(app)
@@ -49,10 +48,10 @@ def create_app(config_name='default'):
     with app.app_context():
         db.create_all()
 
-    # check if the app is running
+    # Check if the app is running
     @app.route('/')
     def index():
-        return "MyDuka Backend is running!"
+        return jsonify({"message": "MyDuka Backend is running!"}), 200
 
     return app
 
@@ -60,7 +59,6 @@ def register_blueprints(app):
     """
     Register all blueprints with the application
     """
-    
     from app.models.merchant import merchant_bp
     app.register_blueprint(merchant_bp, url_prefix='/merchant')
 
@@ -101,7 +99,6 @@ def register_blueprints(app):
     from app.models.reports import report_bp
     app.register_blueprint(report_bp, url_prefix='/reports')
 
-
 def register_error_handlers(app):
     """
     Register error handlers
@@ -125,4 +122,3 @@ def register_error_handlers(app):
     @app.errorhandler(500)
     def internal_error(error):
         return jsonify({'error': 'Internal server error'}), 500
-
