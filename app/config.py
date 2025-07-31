@@ -15,6 +15,7 @@ class Config:
     #
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'postgresql://myduka_user:password@localhost/myduka_db'
+    # postgresql://myduka_db_46ri_user:q0Jyr0i65NdsNWF3ZtoWkmlcZFt3hyvC@dpg-d25jr5ruibrs73anrm70-a.oregon-postgres.render.com/myduka_db_46ri
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_RECORD_QUERIES = True
     
