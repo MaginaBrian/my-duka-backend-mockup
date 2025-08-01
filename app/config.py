@@ -7,7 +7,7 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'fallback-secret-key'
     
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql://myduka_user:password@localhost/myduka_db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql://myduka_db_bsl5_user:jg4tokpfGJUytB0E9S0WSxOXontkKzNI@dpg-d2658cmuk2gs73bhknkg-a.oregon-postgres.render.com/myduka_db_bsl5'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_RECORD_QUERIES = True
 
